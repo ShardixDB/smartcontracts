@@ -31,6 +31,8 @@ contract Crowdsale {
   // Amount of wei raised
   uint256 public weiRaised;
 
+  uint256 public totalForSale;
+
   /**
    * Event for token purchase logging
    * @param purchaser who paid for the tokens
@@ -50,7 +52,7 @@ contract Crowdsale {
    * @param _wallet Address where collected funds will be forwarded to
    * @param _token Address of the token being sold
    */
-  constructor(uint256 _rate, address _wallet, ERC20 _token) public {
+  constructor(uint256 _rate, address _wallet, ERC20 _token, uint256 _totalForSale) public {
     require(_rate > 0);
     require(_wallet != address(0));
     require(_token != address(0));
@@ -58,6 +60,7 @@ contract Crowdsale {
     rate = _rate;
     wallet = _wallet;
     token = _token;
+    totalForSale = _totalForSale;
   }
 
   // -----------------------------------------
@@ -76,16 +79,19 @@ contract Crowdsale {
    * @param _beneficiary Address performing the token purchase
    */
   function buyTokens(address _beneficiary) public payable {
-
+    
     uint256 weiAmount = msg.value;
     _preValidatePurchase(_beneficiary, weiAmount);
 
     // calculate token amount to be created
     uint256 tokens = _getTokenAmount(weiAmount);
+    
 
+    require (tokens <= totalForSale);
+    
     // update state
     weiRaised = weiRaised.add(weiAmount);
-
+    
     _processPurchase(_beneficiary, tokens);
     emit TokenPurchase(
       msg.sender,
@@ -145,6 +151,7 @@ contract Crowdsale {
     internal
   {
     token.transfer(_beneficiary, _tokenAmount);
+    totalForSale = totalForSale.sub(_tokenAmount);
   }
 
   /**

@@ -14,10 +14,18 @@ contract TimedCrowdsale is WhitelistedCrowdsale {
   uint256 public openingTime;
   uint256 public closingTime;
 
+  bool public paused;
+
   /**
    * @dev Reverts if not in crowdsale time range.
    */
   modifier onlyWhileOpen {
+    // solium-disable-next-line security/no-block-members
+    require(block.timestamp >= openingTime && block.timestamp <= closingTime && !paused);
+    _;
+  }
+
+  modifier onlyWhenClosed {
     // solium-disable-next-line security/no-block-members
     require(block.timestamp >= openingTime && block.timestamp <= closingTime);
     _;
@@ -28,14 +36,28 @@ contract TimedCrowdsale is WhitelistedCrowdsale {
    * @param _openingTime Crowdsale opening time
    * @param _closingTime Crowdsale closing time
    */
-  constructor(uint256 _openingTime, uint256 _closingTime) public {
+  constructor(uint256 _openingTime, uint256 _closingTime, uint256 _rate, address _wallet, ERC20 _token, uint256 _totalForSale) public {
     // solium-disable-next-line security/no-block-members
     require(_openingTime >= block.timestamp);
     require(_closingTime >= _openingTime);
 
     openingTime = _openingTime;
     closingTime = _closingTime;
+
+    paused = false;
+
+    super(_rate, _wallet, _token, _totalForSale);
   }
+
+  function pauseCrowdsale() public onlyOwner {
+    paused = true;
+  }
+  
+
+  function burnUnsoledTokens() public onlyWhenClosed {
+    token.burn(totalForSale);
+  }
+  
 
   /**
    * @dev Checks whether the period in which the crowdsale is open has already elapsed.
