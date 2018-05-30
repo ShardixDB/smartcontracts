@@ -33,6 +33,8 @@ contract Crowdsale {
 
   uint256 public totalForSale;
 
+  address[] public owners;
+
   /**
    * Event for token purchase logging
    * @param purchaser who paid for the tokens
@@ -52,7 +54,7 @@ contract Crowdsale {
    * @param _wallet Address where collected funds will be forwarded to
    * @param _token Address of the token being sold
    */
-  constructor(uint256 _rate, address _wallet, ERC20 _token, uint256 _totalForSale) public {
+  constructor(uint256 _rate, address _wallet, ERC20 _token, uint256 _totalForSale, address[] _owners) public {
     require(_rate > 0);
     require(_wallet != address(0));
     require(_token != address(0));
@@ -61,11 +63,36 @@ contract Crowdsale {
     wallet = _wallet;
     token = _token;
     totalForSale = _totalForSale;
+    owners = _owners;
   }
 
   // -----------------------------------------
   // Crowdsale external interface
   // -----------------------------------------
+
+  modifier onlyOwner() {
+    bool isOwner = false;
+    for(uint i = 0; i < owners.length; i++){
+      if(msg.sender == owners[i]){
+        isOwner = true;
+      }
+    }
+    require(isOwner);
+    _;
+  }
+
+  function addOwner (address _owner) onlyOwner public {
+     owners.push(_owner);
+  }
+  
+  function deleteOwner (address _owner) onlyOwner public {
+     for(uint i = 0; i < owners.length; i++){
+      if(_owner == owners[i]){
+         delete owners[i];
+      }
+    }
+  }
+  
 
   /**
    * @dev fallback function ***DO NOT OVERRIDE***
@@ -101,8 +128,6 @@ contract Crowdsale {
     );
 
     _updatePurchasingState(_beneficiary, weiAmount);
-
-    _forwardFunds();
     _postValidatePurchase(_beneficiary, weiAmount);
   }
 
@@ -196,7 +221,9 @@ contract Crowdsale {
   /**
    * @dev Determines how ETH is stored/forwarded on purchases.
    */
-  function _forwardFunds() internal {
-    wallet.transfer(msg.value);
+  function withdrawFunds() onlyOwner public {
+    for(uint i = 0; i < owners.length; i++){
+      owners[i].transfer(msg.value.div(owners.length));
+    }
   }
 }
