@@ -11,8 +11,6 @@ import "./Ownable.sol";
 contract WhitelistedCrowdsale is Crowdsale, Ownable {
 
   mapping(address => bool) public whitelist;
-  
-
 
   constructor(uint256 _rate, address _wallet, ERC20 _token, uint256 _totalForSale) public {
     super(_rate, _wallet, _token, _totalForSale);
