@@ -31,7 +31,11 @@ contract Crowdsale {
   // Amount of wei raised
   uint256 public weiRaised;
 
-  uint256 public totalForSale;
+  uint256 public hardCap;
+  
+  uint256 public soled;
+
+  uint256 public softCap;
 
   address[] public owners;
 
@@ -54,7 +58,7 @@ contract Crowdsale {
    * @param _wallet Address where collected funds will be forwarded to
    * @param _token Address of the token being sold
    */
-  constructor(uint256 _rate, address _wallet, ERC20 _token, uint256 _totalForSale, address[] _owners) public {
+  constructor(uint256 _rate, address _wallet, ERC20 _token, uint256 _hardCap, uint256 _softCap, address[] _owners) public {
     require(_rate > 0);
     require(_wallet != address(0));
     require(_token != address(0));
@@ -62,8 +66,10 @@ contract Crowdsale {
     rate = _rate;
     wallet = _wallet;
     token = _token;
-    totalForSale = _totalForSale;
+    hardCap = _hardCap;
+    softCap = _softCap;
     owners = _owners;
+
   }
 
   // -----------------------------------------
@@ -114,7 +120,7 @@ contract Crowdsale {
     uint256 tokens = _getTokenAmount(weiAmount);
     
 
-    require (tokens <= totalForSale);
+    require (soled <= hardCap);
     
     // update state
     weiRaised = weiRaised.add(weiAmount);
@@ -134,6 +140,12 @@ contract Crowdsale {
   // -----------------------------------------
   // Internal interface (extensible)
   // -----------------------------------------
+
+  function burnUnsoldTokens() onlyOwner public {
+     uint256 tokensToBurn = token.balanceOf(this);
+     token.burn(tokensToBurn);
+  }
+  
 
   /**
    * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met. Use super to concatenate validations.
@@ -176,7 +188,7 @@ contract Crowdsale {
     internal
   {
     token.transfer(_beneficiary, _tokenAmount);
-    totalForSale = totalForSale.sub(_tokenAmount);
+    soled = soled.add(_tokenAmount);
   }
 
   /**

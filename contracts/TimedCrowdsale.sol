@@ -53,12 +53,17 @@ contract TimedCrowdsale is WhitelistedCrowdsale {
     paused = true;
   }
 
+  function unPauseCrowdsale() public onlyOwner {
+    paused = false;
+  }
+
   function changeCrowdsaleClosingTime(uint256 _newClosingTime) public onlyOwner {
     closingTime = _newClosingTime;
   }
   
 
   function burnUnsoledTokens() public onlyWhenClosed {
+    
     token.burn(totalForSale);
   }
   
